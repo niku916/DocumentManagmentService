@@ -16,22 +16,26 @@ public class DmsRequestDto {
 	private String purCd;
 	private String ownerName;
 	private Integer officeCd;
-	private String serviceRgn;
+	private String serviceRgn = "0";
 	private Integer vhClassType;
 	private String jKey;
 	private String jSecurityKey;
 	private String docOperationType;
+
 	private boolean esignFlag;
 	private Boolean mergeflag = false;
 	private Boolean esignUserOptFlag;
+
 	private Boolean dse = false;
 	private Boolean dss = false;
 	private Map<Integer, List<String>> purDoc = new HashMap<Integer, List<String>>();
 	private Map<String, Boolean> docDoubleSignStatus = new HashMap<String, Boolean>();
+
 	private String docType;
-	// private TmEsign tmEsign = new TmEsign();
+	private TmEsign tmEsign = new TmEsign();
 	private String clientReturnUrl;
 	private String esignDetailUpdateApi;
+
 	private String saveDoublesignPendUrl;
 	private String moveDoublesignPendUrl;
 	private Boolean popUpWin = false;
@@ -40,7 +44,13 @@ public class DmsRequestDto {
 	private String pmtType;
 	private String transType;
 	private String portalCd;
-	@JsonIgnore
+	// @JsonIgnore
 	private String authType;
+	private String regn_type;
+	private int appl_purcd;
+	@JsonIgnore
+	private Boolean autoUploadView = false;
+	// @JsonIgnore
+	private Boolean videoUpload = false;
 
 }
