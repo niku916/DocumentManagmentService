@@ -1,50 +1,60 @@
 package com.dms.ServiceImpl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
-import com.dms.Request.Dto.DmsRequestDto;
-import com.dms.Response.Dto.DmsResponseDto;
+import com.dms.Dto.DmsDocument;
+import com.dms.Dto.DmsRequest;
+import com.dms.Dto.Response.DmsResonseDto;
 import com.dms.Service.DmsService;
-import com.dms.Util.CommonConstant;
-import com.dms.Util.DmsDocumentUpload;
-import com.dms.Util.DmsUploadUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dms.Utility.DmsUploadUtil;
+import com.np.dms.client.DmsRestClient;
+import com.np.dms.dto.RequestDataDto;
+import com.np.dms.dto.ResponseDto;
 
 @Service
 public class DmsServiceImpl implements DmsService {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DmsServiceImpl.class);
-	@Autowired
-	private ObjectMapper mapper;
 
-	@Override
-	public DmsResponseDto getListOfDocument(String dmsRequestParam) throws Exception {
+	private static final Logger logger = LogManager.getLogger(DmsServiceImpl.class);
 
-		String data = dmsRequestParam.replace("%2b", "+");
-		String jsonData = DmsUploadUtil.decrypt(data, CommonConstant.TOKEN);
+	private final DmsUploadUtil dmsUploadUtil;
 
-		if (jsonData == null) {
-			throw new IllegalArgumentException("Invalid encrypted data");
-		}
-
-		DmsRequestDto request = mapper.readValue(jsonData, DmsRequestDto.class);
-		DmsDocumentUpload upload = new DmsDocumentUpload();
-		upload.setDmsRequest(request);
-
-		setupEsignUrl(request);
-		ensureAuthType(request);
-
-		// Fetch document details
-		DmsDocument document = dmsUploadUtil.getListofDocToUploadOrUploaded(request);
-		upload.setDmsDocument(document);
-
-		handleDocumentLists(upload, request, document);
-		handleDoubleSign(upload, request, document);
-		prepareFlags(document);
-
-		return upload;
+	public DmsServiceImpl(DmsUploadUtil dmsUploadUtil) {
+		this.dmsUploadUtil = dmsUploadUtil;
 	}
 
+	@Override
+	public DmsResonseDto getListOfDocument(String dmsRequest) {
+
+		// Convert JSON string to object
+		DmsRequest request = dmsUploadUtil.readJsonRequest(dmsRequest);
+		logger.info("Parsed DMS request: {}", request);
+
+		try {
+			// Initialize DmsRestClient
+			String baseUrl = "https://staging.parivahan.gov.in/dms-app"; // confirm this with DMS team
+			String apiMethod = "common-app"; // endpoint or method name
+			String className = "VtDocuments"; // typically the class used for signing
+
+			DmsRestClient client = new DmsRestClient(baseUrl, apiMethod, className);
+
+			// Call the DMS API
+			ResponseDto responseDto = client.invokeGetVtDocAPI(vahanCitizenConf(dmsRequest));
+			logger.info("Received response from DMS: {}", responseDto);
+
+			if (responseDto != null) {
+				DmsDocument dmsDocument = dmsUploadUtil.fillaldetails(responseDto);
+				dmsDocument.setApplno(dmsRequest.getApplNo());
+				return dmsDocument;
+			}
+			// …map other fields
+
+			return listOfDocument;
+
+		} catch (Exception ex) {
+			logger.error("Error while calling DMS service", ex);
+			throw new RuntimeException("DMS call failed: " + ex.getMessage(), ex);
+		}
+	}
 }

@@ -1,11 +1,9 @@
 package com.dms.Service;
 
-import com.dms.Response.Dto.DmsResponseDto;
+import com.dms.Dto.Response.DmsResonseDto;
 
 public interface DmsService {
 
-	public DmsResponseDto getListOfDocument(String dmsRequest) ;
-	
-	
+	public DmsResonseDto getListOfDocument(String dmsRequest);
 
 }
